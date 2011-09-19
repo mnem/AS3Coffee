@@ -19,7 +19,8 @@ package nah
     public class Barista extends Sprite
     {
         protected static const N:int = 62;
-        protected static const SIZE:int = (N + 2) * (N + 2);
+        protected static const N_PLUS_2:int = 64;
+        protected static const SIZE:int = N_PLUS_2 * N_PLUS_2;
         //
         protected var u:Vector.<Number> = new Vector.<Number>(SIZE, true);
         protected var v:Vector.<Number> = new Vector.<Number>(SIZE, true);
@@ -48,18 +49,25 @@ package nah
 
             primeVector(u, function(k:int):Number
             {
-                var length:Number = N + 2;
+                var length:Number = N_PLUS_2;
                 var x:Number = k % length;
+                var y:Number = int(k / length);
+
+                if(x > 16 && x < 48 && y > 16 && y < 48) return 10;
 
                 return Math.sin(Math.PI * (x / length));
             });
             primeVector(u_prev, function(k:int):Number
             {
-                return u[k];
+                return 0;//u[k];
             });
             primeVector(v, function(k:int):Number
             {
-                return k - k;
+                var length:Number = N_PLUS_2;
+                var x:Number = k % length;
+                var y:Number = int(k / length);
+
+                return Math.sin(Math.PI * (y / length));
             });
             primeVector(v_prev, function(k:int):Number
             {
@@ -67,10 +75,14 @@ package nah
             });
             primeVector(dens, function(k:int):Number
             {
-                var length:Number = N + 2;
+                var length:Number = N_PLUS_2;
                 var x:Number = k % length;
+                var y:Number = int(k / length);
 
-                return Math.cos(Math.PI * (x / length));
+                if(x < 16 || x > 48) return 0;
+                if(y < 16 || y > 48) return 0;
+
+                return Math.sin(Math.PI * (x / length));
             });
             primeVector(dens_prev, function(k:int):Number
             {
@@ -79,7 +91,7 @@ package nah
 
             primeVector(s, function(k:int):Number
             {
-                return k == IX(32, 32) ? 1 : 0;
+                return k == (32 + (N_PLUS_2 * 32)) ? 1 : 0;
             });
 
             addEventListener(Event.ENTER_FRAME, update);
@@ -87,19 +99,23 @@ package nah
 
         protected function update(event:Event):void
         {
-            vel_step(u, v, u_prev, v_prev, 0.5, 0.5);
-            dens_step(dens, dens_prev, u, v, 0.5, 0.5);
+            var dt:Number = 1;
+            var viscosity:Number = 0.2;
+            var diffusion:Number = 0.7;
+
+            vel_step(u, v, u_prev, v_prev, viscosity, dt);
+            dens_step(dens, dens_prev, u, v, diffusion, dt);
 
             var min:Number = Number.MAX_VALUE;
             var max:Number = Number.MIN_VALUE;
             var s:String = "";
 
             coffee.lock();
-            for (var j:int = 0; j < (N + 2); j++)
+            for (var j:int = 0; j < N_PLUS_2; j++)
             {
-                for (var i:int = 0; i < (N + 2); i++)
+                for (var i:int = 0; i < N_PLUS_2; i++)
                 {
-                    var g:Number = dens[IX(i,j)];
+                    var g:Number = dens[i + (N_PLUS_2 * j)];
                     if(g < min) min = g;
                     if(g > max) max = g;
                     var gi:int = int(Math.abs(g) *128) & 0xff;
@@ -126,15 +142,9 @@ package nah
             }
         }
 
-        // TODO: inline this
-        protected function IX(i:int, j:int):int
-        {
-            return i + ((N + 2) * j);
-        }
-
         protected function letThereBeUnformedCoffee():BitmapData
         {
-            return new BitmapData(N + 2, N + 2, false, 0x000000);
+            return new BitmapData(N_PLUS_2, N_PLUS_2, false, 0x000000);
         }
 
         protected function getCupFor(coffee:BitmapData):Bitmap
@@ -153,37 +163,20 @@ package nah
             }
         }
 
-        protected function diffuse(b:int, x:Vector.<Number>, x0:Vector.<Number>, diff:Number, dt:Number):void
-        {
-            var a:Number = dt * diff * N * N;
-
-            for ( var k:int = 0 ; k < 1/*20*/ ; k++ )
-            {
-                for ( var i:int = 1 ; i <= N ; i++ )
-                {
-                    for ( var j:int = 1 ; j <= N ; j++ )
-                    {
-                        x[IX(i, j)] = (x0[IX(i, j)] + a * (x[IX(i - 1, j)] + x[IX(i + 1, j)] + x[IX(i, j - 1)] + x[IX(i, j + 1)])) / (1 + 4 * a);
-                    }
-                }
-                set_bnd(b, x);
-            }
-        }
-
         protected function set_bnd(b:int, x:Vector.<Number>):void
         {
             for ( var i:int = 1 ; i <= N ; i++ )
             {
-                x[IX(0, i)] = b == 1 ? -x[IX(1, i)] : x[IX(1, i)];
-                x[IX(N + 1, i)] = b == 1 ? -x[IX(N, i)] : x[IX(N, i)];
-                x[IX(i, 0)] = b == 2 ? -x[IX(i, 1)] : x[IX(i, 1)];
-                x[IX(i, N + 1)] = (b == 2) ? -x[IX(i, N)] : x[IX(i, N)];
+                x[0 + (N_PLUS_2 * i)] = b == 1 ? -x[1 + (N_PLUS_2 * i)] : x[1 + (N_PLUS_2 * i)];
+                x[(N+1) + (N_PLUS_2 * i)] = b == 1 ? -x[N + (N_PLUS_2 * i)] : x[N + (N_PLUS_2 * i)];
+                x[i + (N_PLUS_2 * 0)] = b == 2 ? -x[i + (N_PLUS_2 * 1)] : x[i + (N_PLUS_2 * 1)];
+                x[i + (N_PLUS_2 * (N+1))] = (b == 2) ? -x[i + (N_PLUS_2 * N)] : x[i + (N_PLUS_2 * N)];
             }
 
-            x[IX(0, 0)] = 0.5 * (x[IX(1, 0)] + x[IX(0, 1)]);
-            x[IX(0, N + 1)] = 0.5 * (x[IX(1, N + 1)] + x[IX(0, N)]);
-            x[IX(N + 1, 0)] = 0.5 * (x[IX(N, 0)] + x[IX(N + 1, 1)]);
-            x[IX(N + 1, N + 1)] = 0.5 * (x[IX(N, N + 1)] + x[IX(N + 1, N)]);
+            x[0 + (N_PLUS_2 * 0)] = 0.5 * (x[1 + (N_PLUS_2 * 0)] + x[0 + (N_PLUS_2 * 1)]);
+            x[0 + (N_PLUS_2 * (N+1))] = 0.5 * (x[1 + (N_PLUS_2 * (N+1))] + x[0 + (N_PLUS_2 * N)]);
+            x[(N+1) + (N_PLUS_2 * 0)] = 0.5 * (x[N + (N_PLUS_2 * 0)] + x[(N+1) + (N_PLUS_2 * 1)]);
+            x[(N+1) + (N_PLUS_2 * (N+1))] = 0.5 * (x[N + (N_PLUS_2 * (N+1))] + x[(N+1) + (N_PLUS_2 * N)]);
         }
 
         protected function advect(b:int, d:Vector.<Number>, d0:Vector.<Number>, u:Vector.<Number>, v:Vector.<Number>, dt:Number):void
@@ -209,8 +202,8 @@ package nah
             {
                 for ( j = 1 ; j <= N ; j++ )
                 {
-                    x = i - dt0 * u[IX(i, j)];
-                    y = j - dt0 * v[IX(i, j)];
+                    x = i - dt0 * u[i + N_PLUS_2 * j];
+                    y = j - dt0 * v[i + N_PLUS_2 * j];
 
                     if (x < 0.5) x = 0.5;
                     if (x > N + 0.5) x = N + 0.5;
@@ -230,7 +223,7 @@ package nah
                     t1 = y - j0;
                     t0 = 1 - t1;
 
-                    d[IX(i, j)] = s0 * (t0 * d0[IX(i0, j0)] + t1 * d0[IX(i0, j1)]) + s1 * (t0 * d0[IX(i1, j0)] + t1 * d0[IX(i1, j1)]);
+                    d[i + N_PLUS_2 * j] = s0 * (t0 * d0[i0 + N_PLUS_2 * j0] + t1 * d0[i0 + N_PLUS_2 * j1]) + s1 * (t0 * d0[i1 + N_PLUS_2 * j0] + t1 * d0[i1 + N_PLUS_2 * j1]);
                 }
             }
             set_bnd(b, d);
@@ -290,11 +283,27 @@ package nah
             project(u, v, u0, v0);
         }
 
+        protected function diffuse(b:int, x:Vector.<Number>, x0:Vector.<Number>, diff:Number, dt:Number):void
+        {
+            var a:Number = dt * diff * N * N;
+
+            //for ( var k:int = 0 ; k < 20 ; k++ )
+            {
+                for ( var i:int = 1 ; i <= N ; i++ )
+                {
+                    for ( var j:int = 1 ; j <= N ; j++ )
+                    {
+                        x[i + N_PLUS_2 * j] = (x0[i + N_PLUS_2 * j] + a * (x[(i-1) + N_PLUS_2 * j] + x[(i+1) + N_PLUS_2 * j] + x[i + N_PLUS_2 * (j-1)] + x[i + N_PLUS_2 * (j+1)])) / (1 + 4 * a);
+                    }
+                }
+                set_bnd(b, x);
+            }
+        }
+
         protected function project(u:Vector.<Number>, v:Vector.<Number>, p:Vector.<Number>, div:Vector.<Number>):void
         {
             var i:int;
             var j:int;
-            var k:int;
 
             var h:Number;
             h = 1.0 / N;
@@ -303,21 +312,21 @@ package nah
             {
                 for ( j = 1 ; j <= N ; j++ )
                 {
-                    div[IX(i, j)] = -0.5 * h * (u[IX(i + 1, j)] - u[IX(i - 1, j)] + v[IX(i, j + 1)] - v[IX(i, j - 1)]);
-                    p[IX(i, j)] = 0;
+                    div[i + N_PLUS_2 * j] = -0.5 * h * (u[(i+1) + N_PLUS_2 * j] - u[(i-1) + N_PLUS_2 * j] + v[i + N_PLUS_2 * (j+1)] - v[i + N_PLUS_2 * (j-1)]);
+                    p[i + N_PLUS_2 * j] = 0;
                 }
             }
 
             set_bnd(0, div);
             set_bnd(0, p);
 
-            for ( k = 0 ; k < 20 ; k++ )
+            //for ( var k:int = 0 ; k < 20 ; k++ )
             {
                 for ( i = 1 ; i <= N ; i++ )
                 {
                     for ( j = 1 ; j <= N ; j++ )
                     {
-                        p[IX(i, j)] = (div[IX(i, j)] + p[IX(i - 1, j)] + p[IX(i + 1, j)] + p[IX(i, j - 1)] + p[IX(i, j + 1)]) / 4 ;
+                        p[i + N_PLUS_2 * j] = (div[i + N_PLUS_2 * j] + p[(i-1) + N_PLUS_2 * j] + p[(i+1) + N_PLUS_2 * j] + p[i + N_PLUS_2 * (j-1)] + p[i + N_PLUS_2 * (j+1)]) / 4 ;
                     }
                 }
                 set_bnd(0, p);
@@ -326,8 +335,8 @@ package nah
             {
                 for ( j = 1 ; j <= N ; j++ )
                 {
-                    u[IX(i, j)] -= 0.5 * (p[IX(i + 1, j)] - p[IX(i - 1, j)]) / h;
-                    v[IX(i, j)] -= 0.5 * (p[IX(i, j + 1)] - p[IX(i, j - 1)]) / h;
+                    u[i + N_PLUS_2 * j] -= 0.5 * (p[(i+1) + N_PLUS_2 * j] - p[(i-1) + N_PLUS_2 * j]) / h;
+                    v[i + N_PLUS_2 * j] -= 0.5 * (p[i + N_PLUS_2 * (j+1)] - p[i + N_PLUS_2 * (j-1)]) / h;
                 }
             }
             set_bnd(1, u);
