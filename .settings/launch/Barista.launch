@@ -4,8 +4,8 @@
 <stringAttribute key="APP_ARGUMENTS" value=""/>
 <stringAttribute key="ARGUMENTS" value=""/>
 <stringAttribute key="EXCLUDED_PACKAGES_LIST" value=""/>
-<booleanAttribute key="FILTER_INTERNAL_PACKAGES" value="true"/>
-<stringAttribute key="INCLUDED_PACKAGES_LIST" value=""/>
+<booleanAttribute key="FILTER_INTERNAL_PACKAGES" value="false"/>
+<stringAttribute key="INCLUDED_PACKAGES_LIST" value="nah"/>
 <booleanAttribute key="KILL_PREVIOUS_VIEWER" value="true"/>
 <stringAttribute key="LAUNCHER_DEPENDENCIES" value="[Self]"/>
 <stringAttribute key="MAIN_CLASS" value="src/nah/Barista.as"/>
@@ -18,7 +18,7 @@
 <booleanAttribute key="PASS_RSLS" value="false"/>
 <booleanAttribute key="PASS_SWCS" value="true"/>
 <booleanAttribute key="PERFORMANCE_PROFILING" value="true"/>
-<booleanAttribute key="PERFORMANCE_PROFILING_CLEAR_DATA" value="true"/>
+<booleanAttribute key="PERFORMANCE_PROFILING_CLEAR_DATA" value="false"/>
 <intAttribute key="PERFORMANCE_PROFILING_CLEAR_DATA_TIME" value="3"/>
 <intAttribute key="PLAYER_HEIGHT" value="400"/>
 <intAttribute key="PLAYER_WIDTH" value="550"/>
