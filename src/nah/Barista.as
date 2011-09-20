@@ -62,12 +62,10 @@ package nah
 
             if(x < 0) x = 0;
             if(x > 63) x = 63;
-            if(y < 0) x = 0;
-            if(y > 63) x = 63;
+            if(y < 0) y = 0;
+            if(y > 63) y = 63;
 
             var i:int = x + 64 * y;
-
-            trace(i);
 
             liquid.dens_prev[i] = 10;
         }

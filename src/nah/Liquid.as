@@ -6,6 +6,7 @@ package nah
      * All maths and physics merrily stolen from:
      *
      *    http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/GDC03.pdf
+     *    http://www.multires.caltech.edu/teaching/demos/java/stablefluids.htm
      */
     public class Liquid
     {
@@ -13,12 +14,19 @@ package nah
         protected static const N_PLUS_2:int = 64;
         protected static const SIZE:int = N_PLUS_2 * N_PLUS_2;
         //
-        protected var u:Vector.<Number> = new Vector.<Number>(SIZE, true);
-        protected var v:Vector.<Number> = new Vector.<Number>(SIZE, true);
+        protected var dt:Number = 0.2;
+        protected var visc:Number = 0.0;
+        protected var diff:Number = 0.0;
+        //
+        protected var tmp:Vector.<Number>;
+        //
+        protected var _u:Vector.<Number> = new Vector.<Number>(SIZE, true);
+        protected var _v:Vector.<Number> = new Vector.<Number>(SIZE, true);
         protected var u_prev:Vector.<Number> = new Vector.<Number>(SIZE, true);
         protected var v_prev:Vector.<Number> = new Vector.<Number>(SIZE, true);
         protected var dens:Vector.<Number> = new Vector.<Number>(SIZE, true);
         public var dens_prev:Vector.<Number> = new Vector.<Number>(SIZE, true);
+        protected var curl:Vector.<Number> = new Vector.<Number>(SIZE, true);
         //
         protected var _photo:BitmapData;
 
@@ -26,23 +34,28 @@ package nah
         {
             _photo = new BitmapData(N_PLUS_2, N_PLUS_2, false, 0x000000);
 
-            primeVector(u, returnZero);
-            primeVector(u_prev, returnZero);
-            primeVector(v, returnZero);
-            primeVector(v_prev, returnZero);
-            primeVector(dens, returnZero);
-            primeVector(dens_prev, returnZero);
+            zeroVector(_u);
+            zeroVector(u_prev);
+            zeroVector(_v);
+            zeroVector(v_prev);
+            zeroVector(dens);
+            zeroVector(dens_prev);
+            zeroVector(curl);
         }
 
-        protected function returnZero(...args):Number
+        protected function zeroVector(vector:Vector.<Number>):void
         {
-            return 0;
+            var length:int = vector.length;
+            for (var i:int = 0; i < length; i++)
+            {
+                vector[i] = 0;
+            }
         }
 
         public function update():void
         {
-            vel_step(u, v, u_prev, v_prev, 100, 1);
-            dens_step(dens, dens_prev, u, v, 0.5, 1);
+            vel_step(visc, dt);
+            dens_step(diff, dt);
         }
 
         protected var r:Rectangle = new Rectangle(0, 0, N_PLUS_2, N_PLUS_2);
@@ -63,42 +76,114 @@ package nah
             _photo.unlock();
         }
 
-        protected function primeVector(vector:Vector.<Number>, primer:Function):void
-        {
-            var length:int = vector.length;
-            for (var i:int = 0; i < length; i++)
-            {
-                vector[i] = primer(i);
-            }
-        }
-
         public function get photo():BitmapData
         {
             return _photo;
         }
 
-        protected function add_source(x:Vector.<Number>, source:Vector.<Number>, dt:Number):void
+        protected function add_source(x:Vector.<Number>, x0:Vector.<Number>, dt:Number):void
         {
             for (var i:int = 0; i < SIZE; i++)
             {
-                x[i] += dt * source[i];
+                x[i] += dt * x0[i];
             }
         }
+
+        protected function buoyancy(buoy:Vector.<Number>):void
+        {
+            var Tamb:Number = 0;
+            var a:Number = 0.000625;
+            var b:Number = 0.025;
+            var i:int;
+            var j:int;
+
+            // sum all temperatures
+            for ( i = 1; i <= N; i++)
+            {
+                for (j = 1; j <= N; j++)
+                {
+                    Tamb += dens[i + N_PLUS_2 * j];
+                }
+            }
+
+            // get average temperature
+            Tamb /= (N * N);
+
+            // for each cell compute buoyancy force
+            for ( i = 1; i <= N; i++)
+            {
+                for ( j = 1; j <= N; j++)
+                {
+                    buoy[i + N_PLUS_2 * j] = a * dens[i + N_PLUS_2 * j] + -b * (dens[i + N_PLUS_2 * j] - Tamb);
+                }
+            }
+        }
+
+        protected function vorticityConfinement(vc_x:Vector.<Number>, vc_y:Vector.<Number>):void
+        {
+            var dw_dx:Number;
+            var dw_dy:Number;
+            var length:Number;
+            var v:Number;
+            var i:int;
+            var j:int;
+            var du_dy:Number;
+            var dv_dx:Number;
+
+            // Calculate magnitude of curl(u,v) for each cell. (|w|)
+            for ( i = 1; i <= N; i++)
+            {
+                for ( j = 1; j <= N; j++)
+                {
+                    du_dy = (_u[i + N_PLUS_2 * (j + 1)] - _u[i + N_PLUS_2 * (j - 1)]) * 0.5;
+                    dv_dx = (_v[(i + 1) + N_PLUS_2 * j] - _v[(i - 1) + N_PLUS_2 * j]) * 0.5;
+
+                    curl[i + N_PLUS_2 * j] = Math.abs(du_dy - dv_dx);
+                }
+            }
+
+            for ( i = 2; i < N; i++)
+            {
+                for ( j = 2; j < N; j++)
+                {
+                    // Find derivative of the magnitude (n = del |w|)
+                    dw_dx = (curl[(i + 1) + N_PLUS_2 * j] - curl[(i - 1) + N_PLUS_2 * j]) * 0.5;
+                    dw_dy = (curl[i + N_PLUS_2 * (j + 1)] - curl[i + N_PLUS_2 * (j - 1)]) * 0.5;
+
+                    // Calculate vector length. (|n|)
+                    // Add small factor to prevent divide by zeros.
+                    length = Math.sqrt(dw_dx * dw_dx + dw_dy * dw_dy) + 0.000001;
+
+                    // N = ( n/|n| )
+                    dw_dx /= length;
+                    dw_dy /= length;
+
+                    du_dy = (_u[i + N_PLUS_2 * (j + 1)] - _u[i + N_PLUS_2 * (j - 1)]) * 0.5;
+                    dv_dx = (_v[(i + 1) + N_PLUS_2 * j] - _v[(i - 1) + N_PLUS_2 * j]) * 0.5;
+                    v = du_dy - dv_dx;
+
+                    // N x w
+                    vc_x[i + N_PLUS_2 * j] = dw_dy * -v;
+                    vc_y[i + N_PLUS_2 * j] = dw_dx *  v;
+                }
+            }
+        }
+
 
         protected function set_bnd(b:int, x:Vector.<Number>):void
         {
             for ( var i:int = 1 ; i <= N ; i++ )
             {
-                x[0 + (N_PLUS_2 * i)] = b == 1 ? -x[1 + (N_PLUS_2 * i)] : x[1 + (N_PLUS_2 * i)];
-                x[(N+1) + (N_PLUS_2 * i)] = b == 1 ? -x[N + (N_PLUS_2 * i)] : x[N + (N_PLUS_2 * i)];
-                x[i + (N_PLUS_2 * 0)] = b == 2 ? -x[i + (N_PLUS_2 * 1)] : x[i + (N_PLUS_2 * 1)];
-                x[i + (N_PLUS_2 * (N+1))] = (b == 2) ? -x[i + (N_PLUS_2 * N)] : x[i + (N_PLUS_2 * N)];
+                x[0 + (N_PLUS_2 * i)] = b == 1 ? -x[1 + N_PLUS_2 * i] : x[1 + N_PLUS_2 * i];
+                x[(N+1) + N_PLUS_2 * i] = b == 1 ? -x[N + N_PLUS_2 * i] : x[N + N_PLUS_2 * i];
+                x[i + N_PLUS_2 * 0] = b == 2 ? -x[i + N_PLUS_2 * 1] : x[i + N_PLUS_2 * 1];
+                x[i + N_PLUS_2 * (N+1)] = b == 2 ? -x[i + N_PLUS_2 * N] : x[i + N_PLUS_2 * N];
             }
 
-            x[0 + (N_PLUS_2 * 0)] = 0.5 * (x[1 + (N_PLUS_2 * 0)] + x[0 + (N_PLUS_2 * 1)]);
-            x[0 + (N_PLUS_2 * (N+1))] = 0.5 * (x[1 + (N_PLUS_2 * (N+1))] + x[0 + (N_PLUS_2 * N)]);
-            x[(N+1) + (N_PLUS_2 * 0)] = 0.5 * (x[N + (N_PLUS_2 * 0)] + x[(N+1) + (N_PLUS_2 * 1)]);
-            x[(N+1) + (N_PLUS_2 * (N+1))] = 0.5 * (x[N + (N_PLUS_2 * (N+1))] + x[(N+1) + (N_PLUS_2 * N)]);
+            x[0 + N_PLUS_2 * 0] = 0.5 * (x[1 + N_PLUS_2 * 0] + x[0 + N_PLUS_2 * 1]);
+            x[0 + N_PLUS_2 * (N+1)] = 0.5 * (x[1 + N_PLUS_2 * (N+1)] + x[0 + N_PLUS_2 * N]);
+            x[(N+1) + N_PLUS_2 * 0] = 0.5 * (x[N + N_PLUS_2 * 0] + x[(N+1) + N_PLUS_2 * 1]);
+            x[(N+1) + N_PLUS_2 * (N+1)] = 0.5 * (x[N + N_PLUS_2 * (N+1)] + x[(N+1) + N_PLUS_2 * N]);
         }
 
         protected function advect(b:int, d:Vector.<Number>, d0:Vector.<Number>, u:Vector.<Number>, v:Vector.<Number>, dt:Number):void
@@ -197,58 +282,69 @@ package nah
             set_bnd(b, d);
         }
 
-        protected function dens_step(x:Vector.<Number>, x0:Vector.<Number>, u:Vector.<Number>, v:Vector.<Number>, diff:Number, dt:Number):void
+        protected function dens_step(diff:Number, dt:Number):void
         {
-            var tmp:Vector.<Number>;
-
-            add_source(x, x0, dt);
-
+            add_source(dens, dens_prev, dt);
             // SWAP ( x0, x );
-            tmp = x0;
-            x0 = x;
-            x = tmp;
-            diffuse(0, x, x0, diff, dt);
+            tmp = dens_prev;
+            dens_prev = dens;
+            dens = tmp;
 
+            diffuse(0, dens, dens_prev, diff, dt);
             // SWAP ( x0, x );
-            tmp = x0;
-            x0 = x;
-            x = tmp;
-            advect(0, x, x0, u, v, dt);
+            tmp = dens_prev;
+            dens_prev = dens;
+            dens = tmp;
+
+            advect(0, dens, dens_prev, _u, _v, dt);
+
+            zeroVector(dens_prev);
         }
 
-        protected function vel_step(u:Vector.<Number>, v:Vector.<Number>, u0:Vector.<Number>, v0:Vector.<Number>, visc:Number, dt:Number):void
+        protected function vel_step(visc:Number, dt:Number):void
         {
-            var tmp:Vector.<Number>;
+            add_source(_u, u_prev, dt);
+            add_source(_v, v_prev, dt);
 
-            add_source(u, u0, dt);
-            add_source(v, v0, dt);
+            ///
+            vorticityConfinement(u_prev, v_prev);
+            add_source(_u, u_prev, dt);
+            add_source(_v, v_prev, dt);
 
-            // SWAP ( u0, u );
-            tmp = u0;
-            u0 = u;
-            u = tmp;
-            diffuse(1, u, u0, visc, dt);
-
-            // SWAP ( v0, v );
-            tmp = v0;
-            v0 = v;
-            v = tmp;
-            diffuse(2, v, v0, visc, dt);
-
-            project(u, v, u0, v0);
+            buoyancy(v_prev);
+            add_source(_v, v_prev, dt);
+            ///
 
             // SWAP ( u0, u );
-            tmp = u0;
-            u0 = u;
-            u = tmp;
-            // SWAP ( v0, v );
-            tmp = v0;
-            v0 = v;
-            v = tmp;
+            tmp = u_prev;
+            u_prev = _u;
+            _u = tmp;
+            diffuse(0, _u, u_prev, visc, dt);
 
-            advect(1, u, u0, u0, v0, dt);
-            advect(2, v, v0, u0, v0, dt);
-            project(u, v, u0, v0);
+            // SWAP ( v0, v );
+            tmp = v_prev;
+            v_prev = _v;
+            _v = tmp;
+            diffuse(0, _v, v_prev, visc, dt);
+
+            project(_u, _v, u_prev, v_prev);
+
+            // SWAP ( u0, u );
+            tmp = u_prev;
+            u_prev = _u;
+            _u = tmp;
+            // SWAP ( v0, v );
+            tmp = v_prev;
+            v_prev = _v;
+            _v = tmp;
+
+            advect(1, _u, u_prev, u_prev, v_prev, dt);
+            advect(2, _v, v_prev, u_prev, v_prev, dt);
+
+            project(_u, _v, u_prev, v_prev);
+
+            zeroVector(u_prev);
+            zeroVector(v_prev);
         }
 
         protected function diffuse(b:int, x:Vector.<Number>, x0:Vector.<Number>, diff:Number, dt:Number):void
