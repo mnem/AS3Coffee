@@ -7,6 +7,9 @@ package nah
      *
      *    http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/GDC03.pdf
      *    http://www.multires.caltech.edu/teaching/demos/java/stablefluids.htm
+     *
+     *  WARNING: Here be dragons. Or, at least, horrible huge chunks of
+     *  unrolled loops.
      */
     public class Liquid
     {
@@ -487,7 +490,6 @@ package nah
         protected function project(u:Vector.<Number>, v:Vector.<Number>, p:Vector.<Number>, div:Vector.<Number>):void
         {
             var i:int;
-            var j:int;
             var n_plus_2:int = N_PLUS_2;
             var o :int;
 
