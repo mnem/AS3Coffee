@@ -10,7 +10,7 @@ package nah
      */
     public class Liquid
     {
-        static const CLUT:Vector.<uint> = Vector.<uint>([
+        private static const CLUT:Vector.<uint> = Vector.<uint>([
             0xffffff,    0xfefefe,    0xfdfdfd,    0xfcfcfc,    0xfcfbfb,    0xfbfafa,    0xfaf9f9,    0xf9f8f8,
             0xf9f7f7,    0xf8f7f6,    0xf7f6f5,    0xf6f5f4,    0xf6f4f3,    0xf5f3f2,    0xf4f2f1,    0xf3f1f0,
             0xf3f0ef,    0xf2efee,    0xf1efed,    0xf1eeec,    0xf0edeb,    0xefecea,    0xeeebe9,    0xeeeae8,
@@ -60,7 +60,7 @@ package nah
         protected var u_prev:Vector.<Number> = new Vector.<Number>(SIZE, true);
         protected var v_prev:Vector.<Number> = new Vector.<Number>(SIZE, true);
         protected var dens:Vector.<Number> = new Vector.<Number>(SIZE, true);
-        public var dens_prev:Vector.<Number> = new Vector.<Number>(SIZE, true);
+        protected var dens_prev:Vector.<Number> = new Vector.<Number>(SIZE, true);
         protected var curl:Vector.<Number> = new Vector.<Number>(SIZE, true);
         //
         protected var _photo:BitmapData;
@@ -76,6 +76,24 @@ package nah
             zeroVector(dens);
             zeroVector(dens_prev);
             zeroVector(curl);
+        }
+
+        public function addCoffeeAt(x:int, y:int, ml:Number):void
+        {
+            // Invert it
+            x = (N_PLUS_2-1) - x;
+            y = (N_PLUS_2-1) - y;
+
+            //
+            if(x < 0) x = 0;
+            if(x > (N_PLUS_2-1)) x = N_PLUS_2-1;
+            if(y < 0) y = 0;
+            if(y > (N_PLUS_2-1)) y = N_PLUS_2-1;
+
+            dens_prev[x + N_PLUS_2 * y] += ml;
+
+            u_prev[x + N_PLUS_2 * y] =  10;
+            v_prev[x + N_PLUS_2 * y] = -20;
         }
 
         protected function zeroVector(vector:Vector.<Number>):void

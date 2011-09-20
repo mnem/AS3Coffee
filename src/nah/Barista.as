@@ -22,6 +22,7 @@ package nah
         protected var lastFrame:int;
         protected var frameTimeAcc:int;
         protected var frameTimeAccCount:int;
+        protected var espresso:int = 300;
 
         public function Barista():void
         {
@@ -41,8 +42,8 @@ package nah
 
             addEventListener(Event.ENTER_FRAME, update);
 
-            stage.addEventListener(MouseEvent.MOUSE_DOWN, mousedown);
-            stage.addEventListener(MouseEvent.MOUSE_UP, mouseup);
+//            stage.addEventListener(MouseEvent.MOUSE_DOWN, mousedown);
+//            stage.addEventListener(MouseEvent.MOUSE_UP, mouseup);
         }
 
         protected function mousedown(event:MouseEvent):void
@@ -65,13 +66,7 @@ package nah
             if(y < 0) y = 0;
             if(y > 63) y = 63;
 
-            // Invert it
-            x = 63 - x;
-            y = 63 - y;
-
-            var i:int = x + 64 * y;
-
-            liquid.dens_prev[i] = 10;
+            liquid.addCoffeeAt(x, y, 10);
         }
 
         protected function updateFPS():void
@@ -92,6 +87,19 @@ package nah
         protected function update(event:Event):void
         {
             updateFPS();
+
+            if(espresso > 0)
+            {
+                espresso--;
+                if(espresso & 1)
+                {
+                    liquid.addCoffeeAt(57, 3, 10);
+                    liquid.addCoffeeAt(56, 4, 10);
+                    liquid.addCoffeeAt(55, 5, 10);
+                    liquid.addCoffeeAt(44, 6, 10);
+                    liquid.addCoffeeAt(43, 7, 10);
+                }
+            }
 
             liquid.update();
             liquid.snapshot();
