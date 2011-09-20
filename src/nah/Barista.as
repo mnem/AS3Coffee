@@ -65,6 +65,10 @@ package nah
             if(y < 0) y = 0;
             if(y > 63) y = 63;
 
+            // Invert it
+            x = 63 - x;
+            y = 63 - y;
+
             var i:int = x + 64 * y;
 
             liquid.dens_prev[i] = 10;
