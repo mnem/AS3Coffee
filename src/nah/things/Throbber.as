@@ -63,7 +63,7 @@ package nah.things
             text.defaultTextFormat = tf;
 
             text.text = "PRESS";
-            text.x = -text.textWidth / 2;
+            text.x = -text.textWidth / 2 - 2;
             text.y = -text.textHeight / 2;
             text.visible = false;
 

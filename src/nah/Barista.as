@@ -62,20 +62,20 @@ package nah
         {
             firstSlide = new TextNode("Coffee...", TextNode.HORIZONTAL_ALIGN_LEFT, TextNode.VERTICAL_ALIGN_TOP);
 
-            firstSlide.setNext(new TextNode("...LIFE", TextNode.HORIZONTAL_ALIGN_RIGHT, TextNode.VERTICAL_ALIGN_MIDDLE))
-                .setNext(new TextNode("How to brew", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
-                .setNext(new TextNode("Some beans", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+            firstSlide.setNext(new TextNode("...is LIFE", TextNode.HORIZONTAL_ALIGN_RIGHT, TextNode.VERTICAL_ALIGN_MIDDLE))
+                .setNext(new TextNode("How to make:", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new TextNode("take beans", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
                 .setNext(new BeansNode())
-                .setNext(new TextNode("Some Water", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new TextNode("some water", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
                 .setNext(new WaterNode())
                 .setNext(new TextNode("(but not frozen)", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
-                .setNext(new TextNode("Some fire", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new TextNode("some fire", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
                 .setNext(new FireNode())
-                .setNext(new TextNode("Brew", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new TextNode("brew", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
                 .setNext(new BrewNode())
                 .setNext(new PourShotsNode())
-                .setNext(new TextNode("Imbibe.", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_MIDDLE, 0xF6CE30, 0xff431d00))
-                .setTransitionTimes(1, 3);
+                .setNext(new TextNode("imbibe.", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_MIDDLE, 0xF6CE30))
+                .setTransitionTimes(0, 3);
         }
     }
 }

@@ -85,10 +85,17 @@ package nah.sequence
                 }
 
                 previous.canvas.parent.addChild(_canvas);
-                TweensyZero.to(previous.canvas, {alpha:0}, _previousTransitionTime, null, 0, null, function():void
+                if(_previousTransitionTime == 0)
                 {
                     previous.canvas.parent.removeChild(previous.canvas);
-                });
+                }
+                else
+                {
+                    TweensyZero.to(previous.canvas, {alpha:0}, _previousTransitionTime, null, 0, null, function():void
+                    {
+                        previous.canvas.parent.removeChild(previous.canvas);
+                    });
+                }
             }
 
             TweensyZero.to(_canvas, {alpha:1}, _thisTransitionTime, null, 0, null, startLifeTimer);
