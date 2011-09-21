@@ -3,7 +3,7 @@ body {
 	text-align: center;
 }
 
-#flashcontent {
+#flashcontent-container {
 	position:absolute;
 	width: 512px;
 	height: 512px;
@@ -11,6 +11,13 @@ body {
 	left:50%;
 	margin-top:-256px;
 	margin-left:-256px;
+}
+
+#flashcontent {
+	width: 512px;
+	height: 512px;
+	margin: 0;
+	padding: 0;
 }
 
 #flattr {
