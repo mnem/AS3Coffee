@@ -29,6 +29,7 @@
 package nah.sequence
 {
     import com.flashdynamix.motion.TweensyZero;
+
     import flash.display.Sprite;
     import flash.events.Event;
     import flash.events.TimerEvent;
@@ -42,6 +43,8 @@ package nah.sequence
         protected var _next:SequenceNode;
         protected var _canvas:Sprite;
         protected var lifeTimer:Timer;
+        protected var _previousTransitionTime:Number = 0.75;
+        protected var _thisTransitionTime:Number = 0.75;
 
         public function SequenceNode(lifeSpan:Number = 1):void
         {
@@ -71,24 +74,29 @@ package nah.sequence
 
         public function start(previous:SequenceNode = null):void
         {
-            trace("< Stopping " + previous == null ? "null" : previous);
-            trace("> Starting " + this);
-
             _canvas.alpha = 0;
             _canvas.visible = true;
 
-            if(previous != null)
+            if (previous != null)
             {
-                if(previous.canvas.parent == null)
+                if (previous.canvas.parent == null)
                 {
-                    throw new Error("The previous sequence wasn't attached to the stage. I don't know what to do. I'm lost. Help. Help.");
+                    trace("The previous sequence wasn't attached to the stage. I don't know what to do. I'm lost. Help. Help.");
                 }
 
                 previous.canvas.parent.addChild(_canvas);
-                TweensyZero.to(previous.canvas, {alpha:0}, 0.5, null, 0, null, function():void {previous.canvas.parent.removeChild(previous.canvas);});
+                TweensyZero.to(previous.canvas, {alpha:0}, _previousTransitionTime, null, 0, null, function():void
+                {
+                    previous.canvas.parent.removeChild(previous.canvas);
+                });
             }
 
-            TweensyZero.to(_canvas, {alpha:1}, 0.5, null, 0, null, lifeTimer.start);
+            TweensyZero.to(_canvas, {alpha:1}, _thisTransitionTime, null, 0, null, startLifeTimer);
+        }
+
+        protected function startLifeTimer():void
+        {
+            lifeTimer.start();
         }
 
         protected function finished():void
@@ -113,6 +121,22 @@ package nah.sequence
         {
             _next = next;
             return _next;
+        }
+
+        public function setTransitionTimes(previous:Number, me:Number):void
+        {
+            _previousTransitionTime = previous;
+            _thisTransitionTime = me;
+        }
+
+        public function get previousTransitionTime():Number
+        {
+            return _previousTransitionTime;
+        }
+
+        public function get thisTransitionTime():Number
+        {
+            return _thisTransitionTime;
         }
     }
 }

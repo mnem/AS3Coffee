@@ -28,58 +28,52 @@
  */
 package nah.sequence
 {
-    import fl.motion.easing.Sine;
-
+    import fl.motion.easing.Linear;
     import com.flashdynamix.motion.TweensyZero;
 
     import flash.display.Sprite;
     import flash.events.Event;
 
-    public class BeansNode extends SequenceNode
+    public class BrewNode extends SequenceNode
     {
-        protected static const LIFE:Number = 3;
-        protected var beans:Vector.<Sprite>;
+        protected var duration:Number = 5;
+        protected var face:Sprite;
+        protected var minutehand:Sprite;
+        protected var secondhand:Sprite;
 
-        public function BeansNode(quantity:int = 20):void
+        public function BrewNode()
         {
-            super(LIFE);
+            super(duration);
 
-            beans = new Vector.<Sprite>();
+            face = new Sprite();
+            face.graphics.lineStyle(5);
+            face.graphics.beginFill(0xffffff);
+            face.graphics.drawCircle(0, 0, 128);
+            face.graphics.endFill();
+            _canvas.addChild(face);
 
-            for(var i:int = 0; i < quantity; i++)
-            {
-                beans.push(makeBean());
-            }
-        }
+            minutehand = new Sprite();
+            minutehand.graphics.lineStyle(3);
+            minutehand.graphics.lineTo(0, -90);
+            _canvas.addChild(minutehand);
 
-        protected function makeBean():Sprite
-        {
-            var bean:Sprite = new Sprite();
-
-            bean.graphics.beginFill(0x452B11);
-            bean.graphics.drawEllipse(-25, -15, 50, 30);
-            bean.graphics.endFill();
-
-            bean.graphics.beginFill(0xD18234);
-            bean.graphics.drawEllipse(-25, -4, 50, 8);
-            bean.graphics.endFill();
-
-            return bean;
+            secondhand = new Sprite();
+            secondhand.graphics.lineStyle(1, 0xff0000);
+            secondhand.graphics.lineTo(0, -110);
+            _canvas.addChild(secondhand);
         }
 
         override protected function onAddedToStage(event:Event):void
         {
-            var step:Number = (_canvas.stage.stageWidth - 128) / beans.length;
-            for(var i:int = 0; i < beans.length; i++)
-            {
-                beans[i].x = 64 + i * step;
-                beans[i].y = -beans[i].height * 2;
+            face.x = _canvas.stage.stageWidth / 2;
+            face.y = _canvas.stage.stageHeight / 2;
+            minutehand.x = face.x;
+            minutehand.y = face.y;
+            secondhand.x = face.x;
+            secondhand.y = face.y;
 
-                _canvas.addChild(beans[i]);
-                // Ph34r my line length
-                var time:Number = (LIFE / 4) + (LIFE/4 * 4 * Math.random());
-                TweensyZero.to(beans[i], {y:_canvas.stage.stageHeight + 50, rotation:720*Math.random()}, time, Sine.easeIn);
-            }
+            TweensyZero.to(minutehand, {rotation:360/60*duration}, duration, Linear.easeInOut);
+            TweensyZero.to(secondhand, {rotation:360*duration}, duration, Linear.easeInOut);
         }
     }
 }

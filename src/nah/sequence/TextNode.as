@@ -28,10 +28,9 @@
  */
 package nah.sequence
 {
-    import flash.text.TextFormatAlign;
-    import flash.text.TextFieldAutoSize;
     import flash.events.Event;
     import flash.text.TextField;
+    import flash.text.TextFieldAutoSize;
     import flash.text.TextFormat;
 
     public class TextNode extends SequenceNode
@@ -49,13 +48,17 @@ package nah.sequence
         protected var field:TextField;
         protected var horizontalAlign:int;
         protected var verticalAlign:int;
+        protected var colour:uint;
+        protected var backgroundColour:uint;
 
-        public function TextNode(text:String, horizontalAlign:int, verticalAlign:int):void
+        public function TextNode(text:String, horizontalAlign:int, verticalAlign:int, colour:uint = 0x454242, backgroundColour:uint = 0xffffff):void
         {
-            super();
+            super(2);
 
             this.horizontalAlign = horizontalAlign;
             this.verticalAlign = verticalAlign;
+            this.colour = colour;
+            this.backgroundColour = backgroundColour;
 
             field = createTextField();
             field.text = text;
@@ -65,6 +68,13 @@ package nah.sequence
 
         override protected function onAddedToStage(event:Event):void
         {
+            if(backgroundColour >> 24 & 0xff != 0)
+            {
+                _canvas.graphics.beginFill(backgroundColour, (backgroundColour >> 24 & 0xff) / 255);
+                _canvas.graphics.drawRect(0, 0, _canvas.stage.stageWidth, _canvas.stage.stageHeight);
+                _canvas.graphics.endFill();
+            }
+
             switch(verticalAlign)
             {
                 case VERTICAL_ALIGN_MIDDLE:
@@ -106,7 +116,7 @@ package nah.sequence
             format.font = "_serif";
             format.size = 72;
             format.bold = true;
-            format.color = 0x454242;
+            format.color = colour;
 
             field.defaultTextFormat = format;
 

@@ -28,20 +28,17 @@
  */
 package nah
 {
-    import nah.liquid.Liquid;
     import nah.sequence.BeansNode;
+    import nah.sequence.BrewNode;
+    import nah.sequence.FireNode;
+    import nah.sequence.PourShotsNode;
     import nah.sequence.SequenceNode;
     import nah.sequence.TextNode;
+    import nah.sequence.WaterNode;
 
-    import flash.display.Bitmap;
-    import flash.display.BitmapData;
-    import flash.display.PixelSnapping;
     import flash.display.Sprite;
     import flash.display.StageAlign;
     import flash.display.StageScaleMode;
-    import flash.events.Event;
-    import flash.events.MouseEvent;
-    import flash.utils.getTimer;
 
     /**
      * Let's brew some coffee!
@@ -49,36 +46,12 @@ package nah
     [SWF(backgroundColor="#FFFFFF", frameRate="24", width="512", height="512")]
     public class Barista extends Sprite
     {
-        protected var liquid:Liquid;
-        protected var cup:Bitmap;
-        //
-        protected var lastFrame:int;
-        protected var frameTimeAcc:int;
-        protected var frameTimeAccCount:int;
-        protected var espresso:int = 0;
-        //
         protected var firstSlide:SequenceNode;
 
         public function Barista():void
         {
             stage.align = StageAlign.TOP_LEFT;
             stage.scaleMode = StageScaleMode.NO_SCALE;
-
-            liquid = new Liquid();
-
-            cup = getCupFor(liquid.photo);
-
-            cup.x = (stage.stageWidth - cup.width) / 2;
-            cup.y = (stage.stageHeight - cup.height) / 2;
-
-            addChild(cup);
-
-            lastFrame = getTimer();
-
-            addEventListener(Event.ENTER_FRAME, update);
-
-            // pour();
-            stage.addEventListener(MouseEvent.CLICK, click);
 
             setupSlides();
             stage.addChild(firstSlide.canvas);
@@ -93,70 +66,17 @@ package nah
                 .setNext(new TextNode("How to brew", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
                 .setNext(new TextNode("Some beans", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
                 .setNext(new BeansNode())
-                .setNext(new TextNode("MC", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_MIDDLE))
-                .setNext(new TextNode("BC", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
-                .setNext(new TextNode("TR", TextNode.HORIZONTAL_ALIGN_RIGHT, TextNode.VERTICAL_ALIGN_TOP))
-                .setNext(new TextNode("MR", TextNode.HORIZONTAL_ALIGN_RIGHT, TextNode.VERTICAL_ALIGN_MIDDLE))
-                .setNext(new TextNode("BR", TextNode.HORIZONTAL_ALIGN_RIGHT, TextNode.VERTICAL_ALIGN_BOTTOM));
-        }
-
-        protected function click(event:MouseEvent):void
-        {
-            pour();
-        }
-
-        protected function updateFPS():void
-        {
-            var now:int = getTimer();
-            frameTimeAcc += now - lastFrame;
-            lastFrame = now;
-
-            if (++frameTimeAccCount > 60)
-            {
-                var fps:Number = 1000 / (frameTimeAcc / frameTimeAccCount);
-                trace("FPS: " + int(fps));
-                frameTimeAcc = 0;
-                frameTimeAccCount = 0;
-            }
-        }
-
-        protected function update(event:Event):void
-        {
-            updateFPS();
-
-            if (espresso > 0)
-            {
-                espresso--;
-                if (espresso & 1)
-                {
-                    liquid.addCoffeeAt(43 + Math.random() * 15, 3 + Math.random() * 5, 10);
-                    liquid.addCoffeeAt(43 + Math.random() * 15, 3 + Math.random() * 5, 10);
-                    liquid.addCoffeeAt(43 + Math.random() * 15, 3 + Math.random() * 5, 10);
-                    liquid.addCoffeeAt(43 + Math.random() * 15, 3 + Math.random() * 5, 10);
-                    liquid.addCoffeeAt(43 + Math.random() * 15, 3 + Math.random() * 5, 10);
-                }
-            }
-
-            liquid.update();
-            liquid.snapshot();
-        }
-
-        protected function getCupFor(coffee:BitmapData):Bitmap
-        {
-            var bitmap:Bitmap = new Bitmap(coffee, PixelSnapping.NEVER, true);
-            bitmap.scaleX = int(stage.stageWidth / coffee.width);
-            bitmap.scaleY = bitmap.scaleX;
-            return bitmap;
-        }
-
-        public function pour():void
-        {
-            if (espresso <= 0)
-            {
-                espresso = 90;
-            }
+                .setNext(new TextNode("Some Water", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new WaterNode())
+                .setNext(new TextNode("(but not frozen)", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new TextNode("Some fire", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new FireNode())
+                .setNext(new TextNode("Brew", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_BOTTOM))
+                .setNext(new BrewNode())
+                .setNext(new PourShotsNode())
+                .setNext(new TextNode("Imbibe.", TextNode.HORIZONTAL_ALIGN_CENTER, TextNode.VERTICAL_ALIGN_MIDDLE, 0xF6CE30, 0xff431d00))
+                .setTransitionTimes(1, 3);
         }
     }
-    // End of class
-} // End of package
+}
 
